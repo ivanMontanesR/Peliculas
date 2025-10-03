@@ -3,7 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CineSearch - Buscador de Películas</title>
+    <meta
+      name="description"
+      content="Buscador de películas y series en tiempo real con la API de OMDb"
+    />
+    <meta name="author" content="Iván Montañés" />
+    <title>Peliteca De Ivan - Buscador de Películas</title>
     <style>
       * {
         margin: 0;
@@ -101,6 +106,12 @@
         transform: translateY(0);
       }
 
+      .search-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+      }
+
       /* Loading */
       .loading {
         text-align: center;
@@ -136,6 +147,24 @@
         font-size: 1.1rem;
       }
 
+      /* Results Info */
+      .results-info {
+        text-align: center;
+        margin-bottom: 2rem;
+        color: #a0a0a0;
+        font-size: 1.1rem;
+        display: none;
+      }
+
+      .results-info.active {
+        display: block;
+        animation: fadeInUp 0.5s ease-out;
+      }
+
+      .results-info strong {
+        color: #e50914;
+      }
+
       /* Movies Grid */
       .movies-grid {
         display: grid;
@@ -152,6 +181,7 @@
         cursor: pointer;
         border: 1px solid rgba(229, 9, 20, 0.2);
         animation: fadeInUp 0.5s ease-out;
+        position: relative;
       }
 
       .movie-card:hover {
@@ -169,11 +199,13 @@
 
       .movie-poster.placeholder {
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
         background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
         color: #666;
-        font-size: 3rem;
+        padding: 2rem 1rem;
+        text-align: center;
       }
 
       .movie-info {
@@ -189,6 +221,7 @@
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
+        min-height: 2.4rem;
       }
 
       .movie-meta {
@@ -201,14 +234,6 @@
       }
 
       .movie-year {
-        color: #e50914;
-        font-weight: 600;
-      }
-
-      .movie-rating {
-        background: rgba(229, 9, 20, 0.2);
-        padding: 0.3rem 0.8rem;
-        border-radius: 20px;
         color: #e50914;
         font-weight: 600;
       }
@@ -249,6 +274,107 @@
         margin: 0 auto;
       }
 
+      /* Modal para detalles */
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        z-index: 1000;
+        animation: fadeIn 0.3s ease-out;
+      }
+
+      .modal.active {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+      }
+
+      .modal-content {
+        background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+        border-radius: 20px;
+        max-width: 800px;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+        border: 2px solid rgba(229, 9, 20, 0.3);
+        animation: slideUp 0.4s ease-out;
+        position: relative;
+      }
+
+      .modal-close {
+        position: absolute;
+        top: 1.5rem;
+        right: 1.5rem;
+        background: rgba(229, 9, 20, 0.2);
+        border: none;
+        color: #e50914;
+        font-size: 2rem;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: all 0.3s;
+        line-height: 1;
+      }
+
+      .modal-close:hover {
+        background: #e50914;
+        color: white;
+        transform: rotate(90deg);
+      }
+
+      .modal-poster {
+        width: 100%;
+        max-height: 400px;
+        object-fit: cover;
+        border-radius: 20px 20px 0 0;
+      }
+
+      .modal-info {
+        padding: 2rem;
+      }
+
+      .modal-title {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+        color: #e50914;
+      }
+
+      .modal-meta {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+      }
+
+      .modal-tag {
+        padding: 0.5rem 1rem;
+        background: rgba(229, 9, 20, 0.1);
+        border-radius: 20px;
+        font-size: 0.9rem;
+        color: #e50914;
+      }
+
+      .modal-section {
+        margin-bottom: 1.5rem;
+      }
+
+      .modal-section h3 {
+        color: #e50914;
+        margin-bottom: 0.5rem;
+        font-size: 1.2rem;
+      }
+
+      .modal-section p {
+        color: #a0a0a0;
+        line-height: 1.8;
+      }
+
       /* Footer */
       .footer {
         text-align: center;
@@ -273,6 +399,15 @@
       }
 
       /* Animations */
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
       @keyframes fadeInDown {
         from {
           opacity: 0;
@@ -288,6 +423,17 @@
         from {
           opacity: 0;
           transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(50px);
         }
         to {
           opacity: 1;
@@ -361,6 +507,18 @@
         .initial-state h2 {
           font-size: 1.5rem;
         }
+
+        .modal-content {
+          margin: 1rem;
+        }
+
+        .modal-info {
+          padding: 1.5rem;
+        }
+
+        .modal-title {
+          font-size: 1.5rem;
+        }
       }
     </style>
   </head>
@@ -379,7 +537,7 @@
             type="text"
             class="search-input"
             id="searchInput"
-            placeholder="Busca películas, series,juegos ... (ej: Matrix, Inception)"
+            placeholder="Busca películas, series... (ej: Matrix, Inception)"
             autocomplete="off"
           />
           <button class="search-btn" id="searchBtn">Buscar</button>
@@ -394,6 +552,9 @@
         <p>😕 No se encontraron resultados. Intenta con otra búsqueda.</p>
       </div>
 
+      <!-- Results Info -->
+      <div class="results-info" id="resultsInfo"></div>
+
       <!-- Initial State -->
       <div class="initial-state" id="initialState">
         <div class="emoji">🍿</div>
@@ -406,6 +567,14 @@
 
       <!-- Movies Grid -->
       <div class="movies-grid" id="moviesGrid"></div>
+
+      <!-- Modal para detalles -->
+      <div class="modal" id="modal">
+        <div class="modal-content" id="modalContent">
+          <button class="modal-close" id="modalClose">&times;</button>
+          <!-- El contenido se genera dinámicamente con JavaScript -->
+        </div>
+      </div>
 
       <!-- Footer -->
       <div class="footer">
@@ -424,41 +593,124 @@
       // CONFIGURACIÓN DE LA API
       // ========================================
 
-      // API Key gratuita de OMDb (Open Movie Database)
-      // IMPORTANTE: Esta es una key de demostración. Para uso personal, consigue tu propia key en:
-      // https://www.omdbapi.com/apikey.aspx (es GRATIS y toma 1 minuto)
+      // CONSTANTES: Variables que NO cambian durante la ejecución del programa
+      // Se declaran con 'const' para evitar modificaciones accidentales
+
+      // API Key de OMDb - Identificador único para acceder a la API
+      // Esta key es personal y tiene un límite de 1000 peticiones diarias
       const API_KEY = "937459bc";
 
-      // URL base de la API de OMDb
+      // URL base de la API - Endpoint principal donde hacemos las peticiones
       const API_URL = "https://www.omdbapi.com/";
+
+      // Tiempo de debounce en milisegundos (ms)
+      // DEBOUNCE: Técnica para evitar ejecutar una función demasiadas veces
+      // Ejemplo: Si el usuario escribe rápido, esperamos a que termine antes de buscar
+      const DEBOUNCE_DELAY = 500; // 0.5 segundos
 
       // ========================================
       // SELECCIÓN DE ELEMENTOS DEL DOM
       // ========================================
 
-      // Guardamos referencias a los elementos HTML que vamos a manipular
-      // Esto es más eficiente que buscarlos cada vez que los necesitamos
+      // DOM = Document Object Model (Modelo de Objeto del Documento)
+      // Es la representación en JavaScript de todos los elementos HTML de la página
 
-      const searchInput = document.getElementById("searchInput"); // Input donde el usuario escribe
-      const searchBtn = document.getElementById("searchBtn"); // Botón de búsqueda
-      const moviesGrid = document.getElementById("moviesGrid"); // Grid donde se muestran las películas
-      const loading = document.getElementById("loading"); // Mensaje de "Cargando..."
+      // getElementById(): Busca un elemento HTML por su atributo 'id'
+      // Guardamos las referencias en variables para no buscarlos repetidamente (más eficiente)
+
+      const searchInput = document.getElementById("searchInput"); // Campo de texto donde escribe el usuario
+      const searchBtn = document.getElementById("searchBtn"); // Botón "Buscar"
+      const moviesGrid = document.getElementById("moviesGrid"); // Contenedor donde aparecen las películas
+      const loading = document.getElementById("loading"); // Indicador de "Cargando..."
       const errorMessage = document.getElementById("errorMessage"); // Mensaje de error
       const initialState = document.getElementById("initialState"); // Estado inicial (antes de buscar)
+      const resultsInfo = document.getElementById("resultsInfo"); // Información de resultados
+      const modal = document.getElementById("modal"); // Modal (ventana emergente)
+      const modalContent = document.getElementById("modalContent"); // Contenido del modal
+      const modalClose = document.getElementById("modalClose"); // Botón cerrar modal
+
+      // ========================================
+      // VARIABLES DE ESTADO
+      // ========================================
+
+      // Variables que cambian durante la ejecución del programa
+      // Se declaran con 'let' porque sus valores pueden cambiar
+
+      // Timeout ID para implementar debounce
+      // TIMEOUT: Temporizador que ejecuta código después de X tiempo
+      let debounceTimer = null;
+
+      // Última búsqueda realizada (para evitar búsquedas duplicadas)
+      let lastSearch = "";
 
       // ========================================
       // EVENT LISTENERS (ESCUCHADORES DE EVENTOS)
       // ========================================
 
-      // Cuando el usuario hace CLICK en el botón "Buscar"
-      searchBtn.addEventListener("click", searchMovies);
+      // EVENT LISTENER: Función que "escucha" cuando ocurre un evento (click, tecla, etc.)
+      // SINTAXIS: elemento.addEventListener('tipoDeEvento', funcionAEjecutar)
 
-      // Cuando el usuario presiona ENTER en el input de búsqueda
+      // 1. EVENTO: Click en el botón "Buscar"
+      searchBtn.addEventListener("click", () => {
+        // Arrow function () => es una forma moderna y compacta de escribir funciones
+        // Equivale a: function() { searchMovies(); }
+        searchMovies();
+      });
+
+      // 2. EVENTO: Presionar tecla en el input de búsqueda
       searchInput.addEventListener("keypress", (e) => {
-        // 'e' es el evento que contiene información sobre la tecla presionada
+        // 'e' (o 'event') es un OBJETO que contiene información sobre el evento
+        // e.key contiene la tecla que se presionó
+
         if (e.key === "Enter") {
-          // Si la tecla es Enter
-          searchMovies(); // Ejecutamos la búsqueda
+          // '===' compara valor Y tipo (más estricto que '==')
+          // Si la tecla presionada es Enter, ejecutamos la búsqueda
+          searchMovies();
+        }
+      });
+
+      // 3. EVENTO: Input en tiempo real (cada vez que cambia el texto)
+      // MEJORA: Búsqueda mientras escribes con debounce
+      searchInput.addEventListener("input", (e) => {
+        // Este evento se dispara cada vez que cambia el contenido del input
+
+        // DEBOUNCE: Cancelamos el temporizador anterior si existe
+        // clearTimeout() cancela un setTimeout() activo
+        if (debounceTimer) {
+          clearTimeout(debounceTimer);
+        }
+
+        // Creamos un nuevo temporizador
+        // setTimeout(función, milisegundos) ejecuta la función después del tiempo especificado
+        debounceTimer = setTimeout(() => {
+          // Obtenemos el valor actual del input
+          const query = e.target.value.trim();
+
+          // Si hay al menos 3 caracteres, buscamos automáticamente
+          if (query.length >= 3) {
+            searchMovies();
+          }
+        }, DEBOUNCE_DELAY);
+      });
+
+      // 4. EVENTO: Click en el botón de cerrar modal
+      modalClose.addEventListener("click", closeModal);
+
+      // 5. EVENTO: Click fuera del modal para cerrarlo
+      modal.addEventListener("click", (e) => {
+        // e.target es el elemento exacto donde se hizo click
+        // Si se hace click en el fondo oscuro (no en el contenido), cerramos el modal
+        if (e.target === modal) {
+          closeModal();
+        }
+      });
+
+      // 6. EVENTO: Tecla ESC para cerrar modal
+      document.addEventListener("keydown", (e) => {
+        // 'keydown' se dispara cuando se presiona cualquier tecla
+        // Verificamos si el modal está abierto Y si la tecla es ESC
+        if (modal.classList.contains("active") && e.key === "Escape") {
+          closeModal();
         }
       });
 
@@ -466,97 +718,161 @@
       // FUNCIÓN PRINCIPAL: BUSCAR PELÍCULAS
       // ========================================
 
-      // async = función asíncrona (puede esperar operaciones que toman tiempo)
+      // ASYNC FUNCTION: Función asíncrona que puede "esperar" operaciones que toman tiempo
+      // Permite usar 'await' dentro de ella para esperar Promesas
       async function searchMovies() {
-        // Obtenemos el texto del input y eliminamos espacios al inicio/final con trim()
+        // .value obtiene el texto que hay dentro del input
+        // .trim() elimina espacios en blanco al inicio y al final
+        // Ejemplo: "  Matrix  " → "Matrix"
         const query = searchInput.value.trim();
 
-        // VALIDACIÓN: Si el usuario no escribió nada, mostramos error y salimos
+        // VALIDACIÓN: Comprobamos que el usuario escribió algo
         if (query === "") {
+          // Si está vacío, mostramos error y SALIMOS de la función
           showError("Por favor, escribe algo para buscar 🎬");
-          return; // 'return' detiene la ejecución de la función aquí
+          return; // 'return' detiene la ejecución aquí
         }
 
-        // Preparamos la UI antes de hacer la petición a la API
-        showLoading(); // Mostramos el mensaje "Buscando películas..."
-        hideError(); // Ocultamos cualquier error anterior
-        hideInitialState(); // Ocultamos el estado inicial (🍿)
+        // OPTIMIZACIÓN: Evitamos búsquedas duplicadas
+        // Si la búsqueda es igual a la anterior, no hacemos nada
+        if (query === lastSearch) {
+          return;
+        }
+
+        // Guardamos la búsqueda actual
+        lastSearch = query;
+
+        // PREPARAR LA INTERFAZ: Mostramos feedback visual al usuario
+        showLoading(); // Muestra "Buscando películas..."
+        hideError(); // Oculta mensajes de error previos
+        hideInitialState(); // Oculta el estado inicial
+        hideResultsInfo(); // Oculta info de resultados anterior
+        searchBtn.disabled = true; // Deshabilitamos el botón mientras busca
 
         // TRY-CATCH: Manejo de errores
-        // 'try' intenta ejecutar el código, si falla, 'catch' captura el error
+        // TRY: Intenta ejecutar código que puede fallar
+        // CATCH: Si algo falla, captura el error y lo maneja
         try {
-          // ===== PETICIÓN A LA API =====
+          // ===== PETICIÓN HTTP A LA API =====
 
-          // fetch() hace una petición HTTP a la URL especificada
-          // await = "espera" a que la petición termine antes de continuar
-          // Template literals (``) permiten insertar variables con ${}
+          // FETCH API: Función moderna de JavaScript para hacer peticiones HTTP
+          // fetch() devuelve una PROMESA que se resuelve cuando llega la respuesta
+
+          // TEMPLATE LITERALS: Strings con backticks `` que permiten insertar variables
+          // ${variable} inserta el valor de una variable en el string
           const response = await fetch(
             `${API_URL}?apikey=${API_KEY}&s=${query}`
           );
-          // URL completa será algo como: https://www.omdbapi.com/?apikey=3e6e2e3f&s=matrix
+          // AWAIT: "Espera" a que la promesa se resuelva antes de continuar
+          // Sin await, el código seguiría ejecutándose sin esperar la respuesta
 
-          // Convertimos la respuesta a formato JSON (JavaScript Object)
+          // URL completa generada ejemplo:
+          // https://www.omdbapi.com/?apikey=937459bc&s=Matrix
+          // Parámetros:
+          //   - apikey: Tu clave de API
+          //   - s: Search (búsqueda) con el término que escribió el usuario
+
+          // .json() convierte la respuesta de texto a un objeto JavaScript
+          // También devuelve una Promesa, por eso usamos await de nuevo
           const data = await response.json();
 
-          // Ocultamos el loading porque ya tenemos la respuesta
+          // ESTRUCTURA DEL OBJETO 'data' que devuelve la API:
+          // {
+          //   Response: "True" o "False",
+          //   Search: [ array de películas ],
+          //   totalResults: "número",
+          //   Error: "mensaje si hay error"
+          // }
+
+          // Ocultamos el loading y habilitamos el botón
           hideLoading();
+          searchBtn.disabled = false;
 
-          // ===== PROCESAMOS LA RESPUESTA =====
+          // ===== PROCESAMIENTO DE LA RESPUESTA =====
 
-          // La API de OMDb devuelve data.Response = 'True' si encontró resultados
+          // Verificamos si la API encontró resultados
+          // La API devuelve Response: "True" (string) si hay resultados
           if (data.Response === "True") {
-            // data.Search contiene el array con todas las películas encontradas
+            // data.Search es un ARRAY con las películas encontradas
+            // Cada elemento del array es un objeto con: Title, Year, Poster, etc.
             displayMovies(data.Search);
+            showResultsInfo(data.totalResults, query);
           } else {
-            // Si no encontró resultados, mostramos error y limpiamos el grid
-            showError();
-            moviesGrid.innerHTML = ""; // Limpia el HTML del grid
+            // Si no hay resultados, mostramos error
+            // data.Error contiene el mensaje de error de la API
+            showError(data.Error || "No se encontraron resultados");
+            // OPERADOR ||: Si data.Error no existe, usa el mensaje por defecto
+
+            moviesGrid.innerHTML = ""; // Limpiamos películas anteriores
           }
         } catch (error) {
-          // CATCH: Si algo salió mal (sin internet, error del servidor, etc.)
+          // CATCH: Se ejecuta si hubo algún error en el bloque try
+          // Posibles errores: sin internet, servidor caído, respuesta inválida, etc.
+
           hideLoading();
-          showError("Error al conectar con el servidor. Intenta de nuevo.");
-          console.error("Error:", error); // Mostramos el error en la consola del navegador
+          searchBtn.disabled = false;
+
+          // Mostramos mensaje de error al usuario
+          showError("Error al conectar con el servidor. Verifica tu conexión.");
+
+          // CONSOLE: Objeto de JavaScript para mostrar mensajes en la consola del navegador
+          // console.error() muestra errores en rojo (útil para debugging)
+          console.error("Error en searchMovies():", error);
+          // El objeto 'error' contiene información detallada sobre qué falló
         }
       }
 
       // ========================================
-      // FUNCIÓN: MOSTRAR PELÍCULAS EN EL GRID
+      // FUNCIÓN: MOSTRAR PELÍCULAS EN LA CUADRÍCULA
       // ========================================
 
       function displayMovies(movies) {
-        // Primero limpiamos cualquier resultado anterior
+        // PARÁMETRO: 'movies' es un array con las películas
+        // Un ARRAY es una lista ordenada de elementos
+        // Ejemplo: [{Title: "Matrix", Year: "1999"}, {Title: "Inception", Year: "2010"}]
+
+        // Limpiamos el contenedor de películas
+        // innerHTML = '' vacía todo el HTML interno del elemento
         moviesGrid.innerHTML = "";
 
-        // forEach = recorre cada elemento del array 'movies'
-        // movie = película actual en la iteración
-        // index = posición en el array (0, 1, 2, 3...)
+        // FOREACH: Método de arrays que ejecuta una función para cada elemento
+        // SINTAXIS: array.forEach((elemento, indice) => { código })
         movies.forEach((movie, index) => {
-          // ===== CREAR TARJETA DE PELÍCULA =====
+          // 'movie': Película actual (objeto con propiedades Title, Year, Poster, etc.)
+          // 'index': Posición en el array (0, 1, 2, 3...)
 
-          // createElement crea un nuevo elemento HTML (un <div> en este caso)
+          // ===== CREAR TARJETA HTML DINÁMICAMENTE =====
+
+          // createElement(): Crea un elemento HTML nuevo (no visible aún)
           const movieCard = document.createElement("div");
+          // Esto crea: <div></div>
 
-          // Asignamos la clase CSS para darle estilo
+          // Asignamos clase CSS para darle estilo
           movieCard.className = "movie-card";
+          // Ahora es: <div class="movie-card"></div>
 
           // Animación escalonada: cada tarjeta aparece 0.1s después de la anterior
+          // style.animationDelay accede directamente al CSS inline del elemento
           movieCard.style.animationDelay = `${index * 0.1}s`;
+          // tarjeta 0: 0s, tarjeta 1: 0.1s, tarjeta 2: 0.2s, etc.
 
           // ===== MANEJO DEL PÓSTER =====
 
-          // Operador ternario: condición ? siVerdadero : siFalso
-          // Si la película tiene póster (no es 'N/A'), mostramos la imagen
-          // Si no, mostramos un placeholder con emoji 🎬
+          // OPERADOR TERNARIO: forma compacta de if-else
+          // SINTAXIS: condición ? valorSiVerdadero : valorSiFalso
           const posterHTML =
             movie.Poster !== "N/A"
               ? `<img src="${movie.Poster}" alt="${movie.Title}" class="movie-poster">`
-              : `<div class="movie-poster placeholder">🎬</div>`;
+              : `<div class="movie-poster placeholder">
+         <div style="font-size: 4rem; margin-bottom: 1rem;">🎬</div>
+         <div style="font-size: 0.9rem; color: #888;">Sin Póster</div>
+       </div>`;
+          // Si no, mostramos un placeholder con emoji
 
-          // ===== CONSTRUIR HTML DE LA TARJETA =====
+          // ===== CONSTRUIR HTML COMPLETO DE LA TARJETA =====
 
-          // innerHTML = inserta HTML dentro del elemento
-          // Template literals (``) permiten escribir HTML multilínea
+          // innerHTML: Inserta HTML dentro del elemento
+          // TEMPLATE LITERALS multilínea permiten escribir HTML legible
           movieCard.innerHTML = `
                     ${posterHTML}
                     <div class="movie-info">
@@ -567,99 +883,127 @@
                         </div>
                     </div>
                 `;
+          // ${variable} inserta el valor de variables dentro del HTML
 
           // ===== EVENTO CLICK EN LA TARJETA =====
 
-          // Cuando el usuario hace click en una tarjeta
-          // Arrow function () => permite crear funciones de forma más corta
           movieCard.addEventListener("click", () =>
             showMovieDetails(movie.imdbID)
           );
-
-          // ===== AÑADIR TARJETA AL GRID =====
-
-          // appendChild añade el elemento como hijo del grid
           moviesGrid.appendChild(movieCard);
         });
       }
 
-      // ========================================
-      // FUNCIÓN: MOSTRAR DETALLES DE UNA PELÍCULA
-      // ========================================
-
-      // Esta función se ejecuta cuando el usuario hace click en una película
       async function showMovieDetails(imdbID) {
         try {
-          // Nueva petición a la API para obtener información COMPLETA de la película
-          // Parámetros: i=imdbID (ID único), plot=full (sinopsis completa)
+          modal.classList.add("active");
+          modalContent.innerHTML = `
+<button class="modal-close" id="modalCloseTemp">&times;</button>
+<div style="padding: 4rem; text-align: center; color: #e50914;">
+<div style="font-size: 3rem; margin-bottom: 1rem;">🎬</div>
+<div style="font-size: 1.2rem;">Cargando detalles...</div>
+</div>
+`;
+          document
+            .getElementById("modalCloseTemp")
+            .addEventListener("click", closeModal);
+
           const response = await fetch(
             `${API_URL}?apikey=${API_KEY}&i=${imdbID}&plot=full`
           );
-
-          // Convertimos la respuesta a JSON
           const movie = await response.json();
 
-          // Si la API devolvió datos correctos
           if (movie.Response === "True") {
-            // Mostramos un alert con la información de la película
-            // \n = salto de línea
-            alert(
-              `🎬 ${movie.Title} (${movie.Year})\n\n⭐ Rating: ${movie.imdbRating}/10\n📝 ${movie.Plot}\n\n🎭 Director: ${movie.Director}\n👥 Actores: ${movie.Actors}`
-            );
+            modalContent.innerHTML = `
+<button class="modal-close" id="modalCloseNew">&times;</button>
+${
+  movie.Poster !== "N/A"
+    ? `<img src="${movie.Poster}" alt="${movie.Title}" class="modal-poster">`
+    : '<div style="padding: 2rem; text-align: center; font-size: 4rem;">🎬</div>'
+}
+<div class="modal-info">
+<h2 class="modal-title">${movie.Title}</h2>
+<div class="modal-meta">
+<span class="modal-tag">⭐ ${movie.imdbRating || "N/A"}/10</span>
+<span class="modal-tag">📅 ${movie.Year}</span>
+<span class="modal-tag">⏱️ ${movie.Runtime || "N/A"}</span>
+<span class="modal-tag">${movie.Type}</span>
+</div>
+${
+  movie.Plot !== "N/A"
+    ? `<div class="modal-section"><h3>📝 Sinopsis</h3><p>${movie.Plot}</p></div>`
+    : ""
+}
+${
+  movie.Genre !== "N/A"
+    ? `<div class="modal-section"><h3>🎭 Género</h3><p>${movie.Genre}</p></div>`
+    : ""
+}
+${
+  movie.Director !== "N/A"
+    ? `<div class="modal-section"><h3>🎬 Director</h3><p>${movie.Director}</p></div>`
+    : ""
+}
+${
+  movie.Actors !== "N/A"
+    ? `<div class="modal-section"><h3>👥 Actores</h3><p>${movie.Actors}</p></div>`
+    : ""
+}
+${
+  movie.Awards !== "N/A"
+    ? `<div class="modal-section"><h3>🏆 Premios</h3><p>${movie.Awards}</p></div>`
+    : ""
+}
+</div>
+`;
+            document
+              .getElementById("modalCloseNew")
+              .addEventListener("click", closeModal);
           }
         } catch (error) {
-          // Si hubo error al obtener los detalles
-          console.error("Error al obtener detalles:", error);
+          console.error("Error:", error);
         }
       }
 
-      // ========================================
-      // FUNCIONES DE INTERFAZ DE USUARIO (UI)
-      // ========================================
+      function closeModal() {
+        modal.classList.remove("active");
+      }
 
-      // Estas funciones manejan la visibilidad de los diferentes elementos
-
-      // MOSTRAR el mensaje de cargando
       function showLoading() {
-        // classList.add() añade una clase CSS al elemento
         loading.classList.add("active");
       }
 
-      // OCULTAR el mensaje de cargando
       function hideLoading() {
-        // classList.remove() elimina una clase CSS del elemento
         loading.classList.remove("active");
       }
 
-      // MOSTRAR mensaje de error
       function showError(message) {
-        // Si se pasó un mensaje personalizado
         if (message) {
-          // querySelector('p') busca el primer <p> dentro del elemento
-          // textContent cambia el texto del elemento
           errorMessage.querySelector("p").textContent = message;
         }
         errorMessage.classList.add("active");
       }
 
-      // OCULTAR mensaje de error
       function hideError() {
         errorMessage.classList.remove("active");
       }
 
-      // OCULTAR estado inicial (el emoji 🍿 y el texto de bienvenida)
       function hideInitialState() {
-        // style.display = 'none' hace que el elemento no se muestre
         initialState.style.display = "none";
       }
 
-      // ========================================
-      // BÚSQUEDA AUTOMÁTICA AL CARGAR (OPCIONAL)
-      // ========================================
+      function showResultsInfo(total, query) {
+        resultsInfo.innerHTML = `Se encontraron <strong>${total}</strong> resultados para "${query}"`;
+        resultsInfo.classList.add("active");
+      }
 
-      // Si quieres que la página cargue con resultados de ejemplo, descomenta estas líneas:
-      // searchInput.value = 'Avengers';  // Pone "Avengers" en el input
-      // searchMovies();                   // Ejecuta la búsqueda automáticamente
+      function hideResultsInfo() {
+        resultsInfo.classList.remove("active");
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        searchInput.focus();
+      });
     </script>
   </body>
 </html>
